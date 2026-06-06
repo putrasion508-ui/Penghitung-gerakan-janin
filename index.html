@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Penghitung Gerakan Janin</title>
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8927C">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<!-- iOS -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Gerakan Janin">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Nunito+Sans:wght@400;600;700;800&display=swap');
+
+  :root {
+    --cream: #FBF6EE; --peach: #F6D8C4; --rose: #E8927C; --deep: #C56A56;
+    --sage: #8FA98C; --sage-dk: #6E8A6B; --amber: #D99A3E; --alert: #C7544A;
+    --ink: #3D3330; --soft: #7A6F69; --line: #EADFD3; --shadow: rgba(140, 90, 70, 0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: 'Nunito Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh;
+    background-image: radial-gradient(circle at 15% 8%, rgba(246,216,196,0.5), transparent 40%),
+                      radial-gradient(circle at 85% 92%, rgba(143,169,140,0.18), transparent 45%);
+  }
+  .wrap { max-width: 480px; margin: 0 auto; padding: 26px 18px 60px; }
+  header { text-align: center; margin-bottom: 22px; }
+  header .eyebrow { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--rose); font-weight: 700; margin-bottom: 6px; }
+  header h1 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 28px; line-height: 1.1; color: var(--ink); }
+  header h1 em { font-style: italic; color: var(--deep); }
+  .card { background: #fff; border-radius: 22px; padding: 22px 20px; box-shadow: 0 10px 38px var(--shadow); border: 1px solid var(--line); margin-bottom: 16px; }
+
+  .profile-summary { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+  .profile-summary .avatar { width: 50px; height: 50px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, var(--peach), var(--rose)); display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .profile-summary .pinfo { flex: 1; }
+  .profile-summary .pname { font-weight: 800; font-size: 16px; }
+  .profile-summary .pmeta { font-size: 12px; color: var(--soft); margin-top: 2px; }
+  .profile-summary .edit { font-size: 12px; color: var(--rose); font-weight: 700; }
+  .ga-badge { display: inline-block; background: var(--sage); color: #fff; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-top: 6px; }
+  .ga-badge.warn { background: var(--amber); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 12px; font-weight: 700; color: var(--soft); letter-spacing: 0.3px; }
+  .field input, .field select { padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 12px; font-family: 'Nunito Sans'; font-size: 14px; background: var(--cream); color: var(--ink); }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--rose); }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
+  .chk { font-size: 12px; padding: 7px 12px; border: 1.5px solid var(--line); border-radius: 20px; cursor: pointer; user-select: none; transition: all 0.15s; font-weight: 600; }
+  .chk.on { background: var(--peach); border-color: var(--rose); color: var(--deep); }
+  .save-profile { width: 100%; margin-top: 16px; padding: 14px; border: none; border-radius: 14px; background: var(--ink); color: #fff; font-family: 'Nunito Sans'; font-weight: 700; font-size: 15px; cursor: pointer; }
+
+  .session-status { text-align: center; font-size: 13px; color: var(--soft); margin-bottom: 4px; }
+  .timer { font-family: 'Fraunces', serif; font-size: 44px; text-align: center; color: var(--ink); margin-bottom: 16px; font-variant-numeric: tabular-nums; letter-spacing: 1px; }
+  .counter-ring { position: relative; width: 190px; height: 190px; margin: 0 auto 20px; }
+  .counter-ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--line); stroke-width: 14; }
+  .ring-fg { fill: none; stroke: var(--rose); stroke-width: 14; stroke-linecap: round; transition: stroke-dashoffset 0.5s cubic-bezier(.4,0,.2,1); }
+  .ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .ring-center .num { font-family: 'Fraunces', serif; font-size: 60px; line-height: 1; color: var(--deep); }
+  .ring-center .of { font-size: 13px; color: var(--soft); margin-top: 4px; letter-spacing: 1px; }
+
+  .kick-btn { width: 100%; padding: 19px; border: none; border-radius: 18px; background: linear-gradient(135deg, var(--rose), var(--deep)); color: #fff; font-size: 19px; font-weight: 800; letter-spacing: 0.5px; cursor: pointer; box-shadow: 0 8px 22px rgba(197,106,86,0.35); transition: transform 0.1s, box-shadow 0.2s; }
+  .kick-btn:active { transform: scale(0.96); }
+  .kick-btn:disabled { background: var(--line); color: var(--soft); box-shadow: none; }
+  .btn-row { display: flex; gap: 10px; margin-top: 12px; }
+  .btn-ghost { flex: 1; padding: 13px; border: 1.5px solid var(--line); border-radius: 14px; background: transparent; color: var(--soft); font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-ghost:active { background: var(--cream); }
+  .hint { background: var(--peach); border-radius: 14px; padding: 12px 16px; font-size: 13px; color: var(--deep); line-height: 1.5; margin-top: 16px; }
+
+  .conclusion { border-radius: 16px; padding: 16px 18px; margin-top: 16px; color: #fff; line-height: 1.5; display: none; }
+  .conclusion.normal { background: linear-gradient(135deg, var(--sage), var(--sage-dk)); }
+  .conclusion.caution { background: linear-gradient(135deg, var(--amber), #c4862f); }
+  .conclusion.alert { background: linear-gradient(135deg, var(--alert), #a8443b); }
+  .conclusion .ctitle { font-family: 'Fraunces', serif; font-size: 19px; margin-bottom: 6px; }
+  .conclusion .cbody { font-size: 13.5px; }
+  .conclusion .cadvice { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 13px; font-weight: 700; }
+
+  h2 { font-family: 'Fraunces', serif; font-weight: 500; font-size: 20px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+  h2 button { font-family: 'Nunito Sans'; font-size: 12px; font-weight: 700; color: var(--rose); background: none; border: none; cursor: pointer; }
+
+  .stats { display: flex; gap: 10px; margin-bottom: 16px; }
+  .stat { flex: 1; background: #fff; border-radius: 16px; padding: 13px 8px; text-align: center; border: 1px solid var(--line); box-shadow: 0 4px 16px var(--shadow); }
+  .stat .val { font-family: 'Fraunces', serif; font-size: 24px; color: var(--deep); }
+  .stat .lbl { font-size: 10.5px; color: var(--soft); letter-spacing: 0.3px; margin-top: 2px; }
+
+  .daily-summary { background: var(--cream); border: 1px dashed var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 16px; font-size: 13.5px; line-height: 1.55; }
+  .daily-summary .dt { font-weight: 800; color: var(--deep); margin-bottom: 4px; }
+
+  .log-item { display: flex; align-items: center; gap: 13px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+  .log-item:last-child { border-bottom: none; }
+  .log-icon { width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .log-icon.normal { background: #E3ECE1; } .log-icon.caution { background: #F6E7CC; } .log-icon.alert { background: #F3D9D5; }
+  .log-info { flex: 1; }
+  .log-info .top { font-weight: 700; font-size: 14.5px; }
+  .log-info .bot { font-size: 12px; color: var(--soft); margin-top: 1px; }
+  .log-info .tag { font-size: 11px; font-weight: 700; margin-top: 2px; }
+  .tag.normal { color: var(--sage-dk); } .tag.caution { color: var(--amber); } .tag.alert { color: var(--alert); }
+  .log-dur { font-family: 'Fraunces', serif; font-size: 17px; color: var(--deep); text-align: right; }
+  .log-dur .small { display: block; font-family: 'Nunito Sans'; font-size: 10px; color: var(--soft); font-weight: 600; }
+
+  .empty { text-align: center; color: var(--soft); padding: 24px 0; font-size: 14px; }
+  .empty .big { font-size: 32px; display: block; margin-bottom: 8px; opacity: 0.5; }
+  .pulse { animation: pulse 0.4s ease; }
+  @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
+  .footnote { text-align: center; font-size: 11px; color: var(--soft); margin-top: 18px; line-height: 1.5; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Kick Counter</div>
+    <h1>Penghitung <em>Gerakan</em> Janin</h1>
+  </header>
+
+  <div class="card" id="profileCard">
+    <div id="profileView" class="hidden">
+      <div class="profile-summary" id="profileSummary">
+        <div class="avatar">🤰</div>
+        <div class="pinfo">
+          <div class="pname" id="pvName">—</div>
+          <div class="pmeta" id="pvMeta">—</div>
+          <span class="ga-badge" id="pvGA">—</span>
+        </div>
+        <div class="edit">Ubah ›</div>
+      </div>
+    </div>
+    <div id="profileForm">
+      <h2 style="margin-bottom:14px">Profil Ibu &amp; Kehamilan</h2>
+      <div class="form-grid">
+        <div class="field full"><label>Nama Ibu</label><input type="text" id="fName" placeholder="Nama lengkap"></div>
+        <div class="field"><label>Usia Ibu (tahun)</label><input type="number" id="fAge" placeholder="mis. 29" min="12" max="60"></div>
+        <div class="field"><label>HPHT</label><input type="date" id="fLMP"></div>
+        <div class="field full"><label>Kehamilan ke- / Anak ke-</label><input type="text" id="fGravida" placeholder="mis. anak pertama"></div>
+        <div class="field full">
+          <label>Faktor Risiko (pilih yang sesuai)</label>
+          <div class="checks" id="riskChecks">
+            <div class="chk" data-risk="Diabetes gestasional">Diabetes gestasional</div>
+            <div class="chk" data-risk="Hipertensi / preeklampsia">Hipertensi / preeklampsia</div>
+            <div class="chk" data-risk="Kehamilan kembar">Kehamilan kembar</div>
+            <div class="chk" data-risk="Riwayat lahir mati">Riwayat lahir mati</div>
+            <div class="chk" data-risk="Pertumbuhan janin terhambat">IUGR</div>
+            <div class="chk" data-risk="Posisi sungsang">Sungsang</div>
+          </div>
+        </div>
+        <div class="field full"><label>Baseline pribadi — biasanya 10 gerakan tercapai dalam (menit)</label><input type="number" id="fBaseline" placeholder="kosongkan jika belum tahu" min="1" max="120"></div>
+      </div>
+      <button class="save-profile" id="saveProfileBtn">Simpan Profil</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="val" id="statToday">0</div><div class="lbl">Sesi Hari Ini</div></div>
+    <div class="stat"><div class="val" id="statAvg">–</div><div class="lbl">Rata² Waktu</div></div>
+    <div class="stat"><div class="val" id="statTotal">0</div><div class="lbl">Total Sesi</div></div>
+  </div>
+
+  <div class="card">
+    <div class="session-status" id="status">Tekan tombol saat janin bergerak</div>
+    <div class="timer" id="timer">00:00</div>
+    <div class="counter-ring">
+      <svg width="190" height="190" viewBox="0 0 190 190">
+        <circle class="ring-bg" cx="95" cy="95" r="81"></circle>
+        <circle class="ring-fg" id="ring" cx="95" cy="95" r="81" stroke-dasharray="509" stroke-dashoffset="509"></circle>
+      </svg>
+      <div class="ring-center"><div class="num" id="count">0</div><div class="of">dari 10 gerakan</div></div>
+    </div>
+    <button class="kick-btn" id="kickBtn">Catat Gerakan 👶</button>
+    <div class="btn-row">
+      <button class="btn-ghost" id="resetBtn">Reset Sesi</button>
+      <button class="btn-ghost" id="saveBtn">Selesai &amp; Simpan</button>
+    </div>
+    <div class="hint" id="hint"><b>Cara pakai:</b> Pilih waktu janin biasanya aktif (mis. setelah makan / malam hari, berbaring miring kiri). Tekan tombol setiap merasakan gerakan. Hitung sampai 10 gerakan.</div>
+    <div class="conclusion" id="conclusion"></div>
+  </div>
+
+  <div class="card">
+    <div class="daily-summary" id="dailySummary"></div>
+    <h2>Riwayat <button id="clearBtn">Hapus Semua</button></h2>
+    <div id="log"></div>
+  </div>
+
+  <div class="card">
+    <h2>Cadangkan Data</h2>
+    <p style="font-size:13px;color:var(--soft);line-height:1.5;margin-bottom:14px">Simpan salinan profil &amp; seluruh riwayat ke sebuah file. Berguna sebelum membersihkan browser, ganti HP, atau untuk ditunjukkan ke dokter.</p>
+    <div class="btn-row">
+      <button class="btn-ghost" id="exportBtn">⬇ Ekspor (.json)</button>
+      <button class="btn-ghost" id="importBtn">⬆ Pulihkan</button>
+    </div>
+    <button class="btn-ghost" id="exportTxtBtn" style="width:100%;margin-top:10px">📄 Ekspor ringkasan teks (untuk dokter)</button>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none">
+  </div>
+
+  <div class="footnote">
+    Data tersimpan otomatis di perangkat ini.<br>
+    Alat bantu pemantauan — <b>bukan pengganti pemeriksaan medis</b>. Segera hubungi bidan/dokter bila gerakan janin berkurang drastis dari biasanya.
+  </div>
+</div>
+
+<script>
+/* ---- Storage shim: pakai window.storage (artifact Claude) bila ada,
+       selain itu fallback ke localStorage agar app jalan saat di-host sendiri ---- */
+if (typeof window.storage === 'undefined') {
+  const PFX = 'kc_';
+  window.storage = {
+    async get(key){ const v = localStorage.getItem(PFX+key); return v===null ? null : {key, value:v}; },
+    async set(key, value){ localStorage.setItem(PFX+key, value); return {key, value}; },
+    async delete(key){ localStorage.removeItem(PFX+key); return {key, deleted:true}; },
+    async list(prefix){
+      const keys=[]; const want = PFX+(prefix||'');
+      for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith(want)) keys.push(k.slice(PFX.length)); }
+      return {keys};
+    }
+  };
+}
+
+const RING_CIRC = 509;
+let count = 0, kickTimes = [], startTime = null, timerInterval = null, finished = false;
+let profile = null, selectedRisks = [];
+const $ = id => document.getElementById(id);
+
+function fmtTime(ms){ const s=Math.floor(ms/1000),m=Math.floor(s/60); return String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function fmtDur(ms){ const min=Math.round(ms/60000); if(min<60) return min+' mnt'; return Math.floor(min/60)+'j '+(min%60)+'m'; }
+
+function gaFromLMP(lmp){
+  if(!lmp) return null;
+  const days = Math.floor((Date.now()-new Date(lmp).getTime())/86400000);
+  if(days < 0 || days > 320) return null;
+  return { weeks: Math.floor(days/7), days: days%7, totalDays: days };
+}
+function isHighRisk(){ return selectedRisks.length > 0; }
+
+$('riskChecks').addEventListener('click', e=>{
+  const c = e.target.closest('.chk'); if(!c) return;
+  c.classList.toggle('on');
+  const r = c.dataset.risk;
+  if(c.classList.contains('on')) selectedRisks.push(r);
+  else selectedRisks = selectedRisks.filter(x=>x!==r);
+});
+
+$('saveProfileBtn').addEventListener('click', async ()=>{
+  const name = $('fName').value.trim();
+  if(!name){ alert('Mohon isi nama ibu'); return; }
+  profile = { name, age: $('fAge').value, lmp: $('fLMP').value, gravida: $('fGravida').value.trim(), risks: [...selectedRisks], baseline: $('fBaseline').value ? Number($('fBaseline').value) : null };
+  try{ await window.storage.set('profile', JSON.stringify(profile)); }catch(e){ alert('Gagal menyimpan profil'); return; }
+  renderProfile(); await render();
+});
+
+$('profileSummary').addEventListener('click', ()=>{ $('profileView').classList.add('hidden'); $('profileForm').classList.remove('hidden'); });
+
+function renderProfile(){
+  if(!profile){ $('profileForm').classList.remove('hidden'); $('profileView').classList.add('hidden'); return; }
+  $('profileForm').classList.add('hidden'); $('profileView').classList.remove('hidden');
+  $('pvName').textContent = profile.name + (profile.gravida ? ' · '+profile.gravida : '');
+  const meta = [];
+  if(profile.age) meta.push(profile.age+' th');
+  if(profile.risks.length) meta.push(profile.risks.length+' faktor risiko');
+  if(profile.baseline) meta.push('baseline ~'+profile.baseline+' mnt');
+  $('pvMeta').textContent = meta.join(' · ') || '—';
+  const ga = gaFromLMP(profile.lmp); const badge = $('pvGA');
+  if(ga){ badge.textContent = 'Usia kehamilan: '+ga.weeks+' mgg '+ga.days+' hr'; const startWk = isHighRisk()?26:28; badge.classList.toggle('warn', ga.weeks < startWk); }
+  else { badge.textContent = 'Usia kehamilan belum tersedia'; badge.classList.add('warn'); }
+}
+
+function updateRing(){
+  $('count').textContent = count;
+  $('ring').style.strokeDashoffset = RING_CIRC - (RING_CIRC*Math.min(count,10)/10);
+  $('count').classList.remove('pulse'); void $('count').offsetWidth; $('count').classList.add('pulse');
+}
+function tick(){ if(startTime) $('timer').textContent = fmtTime(Date.now()-startTime); }
+
+$('kickBtn').addEventListener('click', ()=>{
+  if(finished) return;
+  if(!startTime){ startTime=Date.now(); $('status').textContent='Sesi berjalan…'; timerInterval=setInterval(tick,500); }
+  count++; kickTimes.push(Date.now()); updateRing();
+  if(count>=10) finishSession(true);
+});
+function finishSession(auto){ if(!startTime||finished) return; finished=true; clearInterval(timerInterval); $('kickBtn').disabled=true; if(auto) $('status').textContent='Target 10 gerakan tercapai!'; }
+
+function evaluate(durMs, cnt){
+  const min = durMs/60000;
+  const ga = profile ? gaFromLMP(profile.lmp) : null;
+  const highRisk = isHighRisk(); const startWk = highRisk?26:28;
+  const baseline = profile && profile.baseline ? profile.baseline : null;
+  let gaNote = '';
+  if(ga && ga.weeks < startWk){ gaNote = ' Catatan: pada '+ga.weeks+' minggu, penghitungan rutin biasanya baru dianjurkan mulai minggu ke-'+startWk+(highRisk?' (lebih awal karena ada faktor risiko)':'')+', jadi hasil ini bersifat pengenalan pola awal.'; }
+
+  if(cnt < 10){
+    return { level:'caution', title:'Sesi belum lengkap',
+      body:'Baru '+cnt+' gerakan tercatat dalam '+fmtDur(durMs)+'. Acuan sehat adalah 10 gerakan dalam 2 jam.'+gaNote,
+      advice: (min>=120) ? '⚠ Sudah '+fmtDur(durMs)+' belum mencapai 10 gerakan. Coba makan/minum manis, berbaring miring kiri, lalu ulangi. Bila tetap <10 gerakan, hubungi bidan/dokter.' : 'Lanjutkan sesi atau coba lagi di jam janin lebih aktif.' };
+  }
+  const perHour = cnt/(min/60);
+  let level, title, body, advice;
+  if(min <= 60){ level='normal'; title='Normal — Aktif'; body='10 gerakan tercapai dalam '+fmtDur(durMs)+' (≈'+Math.round(perHour)+' gerakan/jam). Ini pola yang sangat baik.'; advice='Pertahankan pemantauan rutin di jam yang sama tiap hari.'; }
+  else if(min <= 120){ level='normal'; title='Normal'; body='10 gerakan tercapai dalam '+fmtDur(durMs)+', masih dalam batas sehat (≤2 jam).'; advice='Pola wajar. Catat tiap hari agar baseline makin akurat.'; }
+  else { level='alert'; title='Perlu Perhatian'; body='Butuh '+fmtDur(durMs)+' untuk 10 gerakan — melebihi acuan 2 jam.'; advice='⚠ Hubungi bidan/dokter, terutama bila ini berbeda dari pola biasanya.'; }
+
+  if(baseline && min > baseline*2 && level==='normal'){ level='caution'; title='Lebih Lambat dari Biasanya'; body='10 gerakan butuh '+fmtDur(durMs)+', jauh di atas baseline pribadi Anda (~'+baseline+' mnt).'; advice='⚠ Gerakan terasa lebih lambat dari biasanya. Istirahat, ulangi sesi; bila pola menurun, hubungi tenaga kesehatan.'; }
+  if(highRisk && level==='caution'){ advice += ' Karena ada faktor risiko ('+profile.risks.join(', ')+'), lebih baik konsultasi lebih awal.'; }
+  body += gaNote;
+  return { level, title, body, advice };
+}
+
+function showConclusion(res){
+  const c = $('conclusion');
+  c.className = 'conclusion '+res.level; c.style.display = 'block';
+  c.innerHTML = '<div class="ctitle">'+(res.level==='normal'?'✅ ':res.level==='caution'?'⚠️ ':'🚨 ')+res.title+'</div><div class="cbody">'+res.body+'</div>'+(res.advice?'<div class="cadvice">'+res.advice+'</div>':'');
+}
+
+$('saveBtn').addEventListener('click', async ()=>{
+  if(!startTime){ $('status').textContent='Belum ada gerakan dicatat'; return; }
+  const dur = Date.now()-startTime;
+  const res = evaluate(dur, count);
+  showConclusion(res);
+  const ga = profile ? gaFromLMP(profile.lmp) : null;
+  const entry = { ts:startTime, count, durMs:dur, level:res.level, title:res.title, gaWeeks: ga?ga.weeks:null, incomplete: count<10 };
+  await saveEntry(entry);
+  resetSession(true);
+  await render();
+});
+
+$('resetBtn').addEventListener('click', ()=>resetSession(false));
+function resetSession(keepConclusion){
+  count=0; kickTimes=[]; startTime=null; finished=false; clearInterval(timerInterval);
+  $('timer').textContent='00:00'; $('kickBtn').disabled=false;
+  if(!keepConclusion) $('conclusion').style.display='none';
+  $('status').textContent='Tekan tombol saat janin bergerak'; updateRing();
+}
+
+async function getAll(){
+  try{ const res = await window.storage.list('kick:'); if(!res||!res.keys) return [];
+    const items=[]; for(const k of res.keys){ try{ const r=await window.storage.get(k); if(r) items.push(JSON.parse(r.value)); }catch(e){} }
+    return items.sort((a,b)=>b.ts-a.ts);
+  }catch(e){ return []; }
+}
+async function saveEntry(e){ try{ await window.storage.set('kick:'+e.ts, JSON.stringify(e)); }catch(err){ alert('Gagal menyimpan'); } }
+
+$('clearBtn').addEventListener('click', async ()=>{
+  if(!confirm('Hapus semua riwayat sesi? (Profil tetap tersimpan)')) return;
+  try{ const res=await window.storage.list('kick:'); if(res&&res.keys) for(const k of res.keys) await window.storage.delete(k); }catch(e){}
+  await render();
+});
+
+function dailyConclusion(items){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todays = items.filter(i=>i.ts>=today.getTime());
+  if(!todays.length) return null;
+  const completed = todays.filter(i=>i.count>=10);
+  const alerts = todays.filter(i=>i.level==='alert');
+  // caution sejati = lambat dari biasanya / lewat batas, BUKAN sekadar sesi belum lengkap
+  const slowCautions = todays.filter(i=>i.level==='caution' && !i.incomplete);
+  const incompletes = todays.filter(i=>i.incomplete);
+  let msg, tone;
+  if(alerts.length){ tone='🚨'; msg='Ada '+alerts.length+' sesi yang melebihi batas waktu hari ini. Jika gerakan terasa berkurang, jangan tunda menghubungi bidan/dokter.'; }
+  else if(slowCautions.length){ tone='⚠️'; msg='Sebagian sesi lebih lambat dari biasanya. Pantau lebih sering hari ini dan istirahat di posisi miring kiri.'; }
+  else if(completed.length){ tone='✅'; const avg=completed.reduce((s,i)=>s+i.durMs,0)/completed.length; msg='Pola gerakan hari ini dalam batas wajar — '+completed.length+' sesi mencapai 10 gerakan (rata² '+fmtDur(avg)+'). Teruskan pemantauan rutin.'; }
+  else if(incompletes.length){ tone='👶'; msg='Ada sesi yang belum lengkap hari ini. Coba lagi di jam janin paling aktif (setelah makan / malam hari).'; }
+  else { tone='👶'; msg='Belum ada sesi lengkap hari ini.'; }
+  return { tone, msg };
+}
+
+async function render(){
+  const items = await getAll();
+  const today = new Date(); today.setHours(0,0,0,0);
+  $('statToday').textContent = items.filter(i=>i.ts>=today.getTime()).length;
+  $('statTotal').textContent = items.length;
+  $('statAvg').textContent = items.length ? fmtDur(items.reduce((s,i)=>s+i.durMs,0)/items.length) : '–';
+  const ds = $('dailySummary'); const dc = dailyConclusion(items);
+  if(dc){ ds.style.display='block'; ds.innerHTML='<div class="dt">'+dc.tone+' Kesimpulan Hari Ini</div>'+dc.msg; } else ds.style.display='none';
+  const log = $('log');
+  if(!items.length){ log.innerHTML='<div class="empty"><span class="big">🍼</span>Belum ada riwayat. Mulai sesi pertama!</div>'; return; }
+  log.innerHTML = items.map(i=>{
+    const d=new Date(i.ts);
+    const tgl=d.toLocaleDateString('id-ID',{day:'numeric',month:'short'});
+    const jam=d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    const lvl=i.level||'normal';
+    const icon=lvl==='normal'?'✅':lvl==='caution'?'⚠️':'🚨';
+    const ga = i.gaWeeks!=null ? ' · '+i.gaWeeks+' mgg' : '';
+    return `<div class="log-item"><div class="log-icon ${lvl}">${icon}</div><div class="log-info"><div class="top">${i.count} gerakan</div><div class="bot">${tgl} · ${jam}${ga}</div><div class="tag ${lvl}">${i.title||''}</div></div><div class="log-dur">${fmtDur(i.durMs)}<span class="small">durasi</span></div></div>`;
+  }).join('');
+}
+
+/* ---- BACKUP / RESTORE ---- */
+function download(filename, text, mime){
+  const blob = new Blob([text], {type: mime||'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+$('exportBtn').addEventListener('click', async ()=>{
+  const items = await getAll();
+  const data = { app:'penghitung-gerakan-janin', version:1, exportedAt: new Date().toISOString(), profile, sessions: items };
+  const tgl = new Date().toISOString().slice(0,10);
+  download('backup-gerakan-janin-'+tgl+'.json', JSON.stringify(data,null,2), 'application/json');
+});
+
+$('exportTxtBtn').addEventListener('click', async ()=>{
+  const items = await getAll();
+  const lines = [];
+  lines.push('RINGKASAN PEMANTAUAN GERAKAN JANIN');
+  lines.push('Diekspor: '+new Date().toLocaleString('id-ID'));
+  lines.push('');
+  if(profile){
+    lines.push('PROFIL');
+    lines.push('  Nama       : '+(profile.name||'-'));
+    if(profile.age) lines.push('  Usia ibu   : '+profile.age+' tahun');
+    if(profile.gravida) lines.push('  Kehamilan  : '+profile.gravida);
+    const ga = gaFromLMP(profile.lmp);
+    if(ga) lines.push('  Usia hamil : '+ga.weeks+' minggu '+ga.days+' hari (per tanggal ekspor)');
+    if(profile.risks && profile.risks.length) lines.push('  Risiko     : '+profile.risks.join(', '));
+    if(profile.baseline) lines.push('  Baseline   : ~'+profile.baseline+' menit per 10 gerakan');
+    lines.push('');
+  }
+  lines.push('RIWAYAT SESI (terbaru di atas) — total '+items.length+' sesi');
+  lines.push('-'.repeat(56));
+  if(!items.length) lines.push('  (belum ada data)');
+  items.forEach(i=>{
+    const d = new Date(i.ts);
+    const tgl = d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});
+    const jam = d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
+    const ga = i.gaWeeks!=null ? ', '+i.gaWeeks+' mgg' : '';
+    lines.push(`  ${tgl} ${jam}${ga}`);
+    lines.push(`     ${i.count} gerakan dalam ${fmtDur(i.durMs)}  —  ${i.title||''}`);
+  });
+  lines.push('');
+  lines.push('Catatan: alat bantu pemantauan, bukan diagnosis medis.');
+  const tgl = new Date().toISOString().slice(0,10);
+  download('ringkasan-gerakan-janin-'+tgl+'.txt', lines.join('\n'), 'text/plain');
+});
+
+$('importBtn').addEventListener('click', ()=> $('importFile').click());
+$('importFile').addEventListener('change', async (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  try{
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if(data.app !== 'penghitung-gerakan-janin') throw new Error('File bukan backup app ini');
+    if(!confirm('Pulihkan data dari backup? Profil & riwayat saat ini akan ditimpa.')) { e.target.value=''; return; }
+    // restore profile
+    if(data.profile){ profile=data.profile; selectedRisks=profile.risks||[]; await window.storage.set('profile', JSON.stringify(profile)); }
+    // restore sessions (hapus dulu yang ada)
+    try{ const res=await window.storage.list('kick:'); if(res&&res.keys) for(const k of res.keys) await window.storage.delete(k); }catch(_){}
+    if(Array.isArray(data.sessions)){ for(const s of data.sessions){ if(s&&s.ts) await window.storage.set('kick:'+s.ts, JSON.stringify(s)); } }
+    // refresh UI
+    if(profile){ $('fName').value=profile.name||''; $('fAge').value=profile.age||''; $('fLMP').value=profile.lmp||''; $('fGravida').value=profile.gravida||''; $('fBaseline').value=profile.baseline||''; document.querySelectorAll('#riskChecks .chk').forEach(c=>c.classList.toggle('on', selectedRisks.includes(c.dataset.risk))); }
+    renderProfile(); await render();
+    alert('Berhasil dipulihkan: '+(Array.isArray(data.sessions)?data.sessions.length:0)+' sesi.');
+  }catch(err){ alert('Gagal memulihkan: '+err.message); }
+  e.target.value='';
+});
+
+async function init(){
+  try{ const r=await window.storage.get('profile'); if(r){ profile=JSON.parse(r.value); selectedRisks=profile.risks||[]; } }catch(e){}
+  if(profile){
+    $('fName').value=profile.name||''; $('fAge').value=profile.age||'';
+    $('fLMP').value=profile.lmp||''; $('fGravida').value=profile.gravida||''; $('fBaseline').value=profile.baseline||'';
+    document.querySelectorAll('#riskChecks .chk').forEach(c=>{ if(selectedRisks.includes(c.dataset.risk)) c.classList.add('on'); });
+  }
+  renderProfile(); updateRing(); await render();
+}
+init();
+
+/* Daftarkan service worker (hanya jika di-host via http/https, bukan file://) */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+</script>
+</body>
+</html>
